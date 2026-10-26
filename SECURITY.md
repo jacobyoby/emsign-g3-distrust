@@ -20,3 +20,6 @@ issues or pull requests — they will be removed.
 ## Responsible use
 These tools help operators detect and distrust the compromised intermediates. Use them
 only against systems you are authorized to inspect or administer.
+
+## AI agents
+See [AGENTS.md](AGENTS.md): this project is defensive only — agents must not assist in recovering keys or forging certificates.
