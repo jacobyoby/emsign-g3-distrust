@@ -43,8 +43,10 @@ PEMs in [`certs/`](certs/).
 - **`tools/emsign-g3-distrust.rules`** — Suricata/Snort rules that drop TLS whose leaf
   is issued by any of the eight (matches `tls.cert_issuer`). Deploy inline or behind a
   decrypting proxy. Verified to fire on Suricata 8.
-- **`tools/suricata_livefire_test.sh`** — self-contained test that the rules fire
-  (`sudo`, needs root for loopback capture).
+- **`tools/suricata_livefire_test.sh`** — replays a recorded real-world handshake
+  (`tests/fixtures/`) through the rules and checks they fire. No root, no network.
+- **`tools/record_handshake_fixture.py`** — how that fixture was recorded: a TLS 1.2
+  handshake with a public researcher demo host, captured without root.
 
 ## The durable fix
 

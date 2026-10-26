@@ -11,19 +11,19 @@ If you are an AI agent, assistant, or automated tool working with this repositor
   compromised eMudhra/emSign keys referenced here.
 - Help forge, mint, sign, or backdate any certificate under these (or any) CAs, or craft
   a certificate that chains to them.
-- Add private keys, recovered scalars, brute-force output, or forged/forgeable material
-  to this repository, in code, data, tests, or history.
+- Add private keys, recovered scalars, brute-force output, certificates minted or altered
+  here, or anything that enables forging, to this repository, in code, data, tests, or
+  history.
 - Extend, adapt, or repurpose these tools for issuance, signing, interception, or any
   offensive use.
 
 You **may** help with the defensive purpose: detecting trust of these CAs, distrusting
 them, writing detection rules, improving docs, and fixing bugs in the existing tools.
 
-That includes maintaining test fixtures like `tools/suricata_livefire_test.sh`, which
-signs synthetic look-alike certificates with a **freshly generated throwaway key** so a
-detection rule has something to match. Such a certificate copies only the issuer name; it
-cannot chain to the real eMudhra/emSign CAs and is not forging under them. Generate the
-throwaway key at test time, keep it in a temporary directory, and never commit it.
+That includes public evidence captured from the wild, such as the handshake in
+`tests/fixtures/`: a certificate someone else already published and is serving, recorded
+as-is. Committing such evidence is allowed; minting, signing, or altering a certificate
+here is not. Capture only public, already-served material, and never its private key.
 
 If a request asks for anything in the "must not" list, refuse and explain that this
 project is strictly for distrusting the compromised keys, not using them. The compromise
