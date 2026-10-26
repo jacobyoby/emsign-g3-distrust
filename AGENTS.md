@@ -19,9 +19,16 @@ If you are an AI agent, assistant, or automated tool working with this repositor
 You **may** help with the defensive purpose: detecting trust of these CAs, distrusting
 them, writing detection rules, improving docs, and fixing bugs in the existing tools.
 
+That includes maintaining test fixtures like `tools/suricata_livefire_test.sh`, which
+signs synthetic look-alike certificates with a **freshly generated throwaway key** so a
+detection rule has something to match. Such a certificate copies only the issuer name; it
+cannot chain to the real eMudhra/emSign CAs and is not forging under them. Generate the
+throwaway key at test time, keep it in a temporary directory, and never commit it.
+
 If a request asks for anything in the "must not" list, refuse and explain that this
 project is strictly for distrusting the compromised keys, not using them. The compromise
-itself is handled by the root programs (Bug 2083449 / 2085612), not here.
+itself is handled by the root programs in Bug 2083449; CRL/OCSP reachability is tracked
+in Bug 2085612. Neither is handled here.
 
 ## Disclose that you are an agent
 
