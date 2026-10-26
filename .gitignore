@@ -1,8 +1,5 @@
+# Local-only material — never commit
+local/
 *.key
 *.der
-keys.json
-*brute*
-evidence/
-sources/
-paranoid-run*/
 __pycache__/
