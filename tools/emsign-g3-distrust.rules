@@ -1,0 +1,27 @@
+# Suricata/Snort-style rules: block TLS served with a leaf issued by any of the eight
+# compromised eMudhra/emSign G3 intermediates (private keys recoverable, Mozilla Bug 2083449).
+#
+# HOW IT WORKS: tls.cert_issuer matches the Issuer DN of the server's leaf certificate.
+# A forged leaf minted with a recovered key carries one of these CA CNs as its issuer,
+# so this fires regardless of the leaf's SNI/domain or source IP.
+#
+# MODE:
+#   - "drop" requires Suricata in IPS/inline mode (af-packet/nfqueue). It blocks.
+#   - For passive IDS (tap/SPAN), change "drop" to "alert" — you get detection, not blocking.
+# These inspect cleartext handshakes; they do NOT see certs inside an already-encrypted
+# tunnel. Deploy at a TLS-visible point (inline, or behind a decrypting proxy).
+#
+# Serials (from Bug 2083449 comment 10) are included in msg for correlation.
+
+drop tls any any -> any any (msg:"eMudhra G3 compromised CA: EM DV TLS CA - G3B (serial A4AEE678F23362B4C0E460B772F214) Bug2083449"; flow:established,to_client; tls.cert_issuer; content:"EM DV TLS CA - G3B"; sid:92083401; rev:1;)
+drop tls any any -> any any (msg:"eMudhra G3 compromised CA: EM DV TLS CA - G3C (serial 588B2E3C2BB8CDA13E1A1209254321) Bug2083449"; flow:established,to_client; tls.cert_issuer; content:"EM DV TLS CA - G3C"; sid:92083402; rev:1;)
+drop tls any any -> any any (msg:"eMudhra G3 compromised CA: EM EV TLS CA - G3B (serial C7C41EFE92D825F05EAE841A4A82C1) Bug2083449"; flow:established,to_client; tls.cert_issuer; content:"EM EV TLS CA - G3B"; sid:92083403; rev:1;)
+drop tls any any -> any any (msg:"eMudhra G3 compromised CA: EM EV TLS CA - G3C (serial 8009928A64107601AF05FA2F19F109) Bug2083449"; flow:established,to_client; tls.cert_issuer; content:"EM EV TLS CA - G3C"; sid:92083404; rev:1;)
+drop tls any any -> any any (msg:"eMudhra G3 compromised CA: EM OV TLS CA - G3B (serial 6CADA367FB1C100088120EA202D568) Bug2083449"; flow:established,to_client; tls.cert_issuer; content:"EM OV TLS CA - G3B"; sid:92083405; rev:1;)
+drop tls any any -> any any (msg:"eMudhra G3 compromised CA: EM OV TLS CA - G3C (serial 296926C227A3A1526392B19482A504) Bug2083449"; flow:established,to_client; tls.cert_issuer; content:"EM OV TLS CA - G3C"; sid:92083406; rev:1;)
+drop tls any any -> any any (msg:"eMudhra G3 compromised CA: EM OV CS CA - G3B (serial 7818933F8F85B4619A2B35FBA83D0A) Bug2083449 - code signing"; flow:established,to_client; tls.cert_issuer; content:"EM OV CS CA - G3B"; sid:92083407; rev:1;)
+drop tls any any -> any any (msg:"eMudhra G3 compromised CA: EM OV CS CA - G3C (serial 544B7F922C31AE220A4A922916F6E6) Bug2083449 - code signing"; flow:established,to_client; tls.cert_issuer; content:"EM OV CS CA - G3C"; sid:92083408; rev:1;)
+
+# Catch-all backstop: any emSign G3 "EM ... CA - G3B/G3C" issuer not individually matched
+# above (defensive against a renamed/re-encoded variant). Alert-only to avoid over-blocking.
+alert tls any any -> any any (msg:"eMudhra G3 compromised-family issuer (generic) Bug2083449 - review"; flow:established,to_client; tls.cert_issuer; content:"O=eMudhra"; pcre:"/CN=EM (DV|EV|OV) (TLS|CS) CA - G3[BC]/"; sid:92083409; rev:1;)
