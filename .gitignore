@@ -3,3 +3,11 @@ local/
 *.key
 *.der
 __pycache__/
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/

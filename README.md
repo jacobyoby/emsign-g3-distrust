@@ -1,5 +1,7 @@
 # Deny the compromised eMudhra / emSign G3 intermediate CAs
 
+![CI](https://github.com/jacobyoby/emsign-g3-distrust/actions/workflows/ci.yml/badge.svg)
+
 In October 2026, the private keys of **eight eMudhra intermediate CA certificates**
 were found to be trivially recoverable (P-384 keys generated with private scalars
 below 256). They were revoked `cACompromise` on 2026-10-18 and distrusted by the
@@ -33,13 +35,23 @@ Roots: `emSign Root TLS CA - G3` (`7dd78d5f…2746ed8d`), `emSign Root CS CA - G
 (`f2edaaff…aba34a5`). Full machine-readable list in [`indicators.csv`](indicators.csv),
 PEMs in [`certs/`](certs/).
 
+## Install
+
+Requires Python 3.10+ and `openssl` on PATH for distrust fingerprint checks.
+
+```bash
+pip install -e .
+emsign-g3 scan
+emsign-g3 export-indicators --verify
+```
+
+Override data paths when needed: `EMSIGN_G3_INDICATORS_CSV`, `EMSIGN_G3_CERTS_DIR`.
+
 ## Tools
 
-- **`tools/emsign_trust_scanner.py`** — inventory a host's trust stores (OS, macOS
-  keychain, Windows root, Firefox/NSS) for these anchors. Read-only. `python3 … [--json]`.
-- **`tools/emsign_distrust.py`** — add the eight intermediates to each store's
-  *disallowed/deny* set so a forgery is rejected even without revocation checking.
-  Dry-run by default; `--apply` (sudo) to execute, `--undo` to roll back.
+- **`emsign-g3`** (CLI) — `scan`, `distrust`, `export-indicators` subcommands (see below).
+- **`tools/emsign_trust_scanner.py`** — shim for `emsign-g3 scan` (works without install).
+- **`tools/emsign_distrust.py`** — shim for `emsign-g3 distrust`.
 - **`tools/emsign-g3-distrust.rules`** — Suricata/Snort rules that drop TLS whose leaf
   is issued by any of the eight (matches `tls.cert_issuer`). Deploy inline or behind a
   decrypting proxy. Verified to fire on Suricata 8.
@@ -47,10 +59,9 @@ PEMs in [`certs/`](certs/).
   (`tests/fixtures/`) through the rules and checks they fire. No root, no network.
 - **`tools/record_handshake_fixture.py`** — how that fixture was recorded: a TLS 1.2
   handshake with a public researcher demo host, captured without root.
-- **`tools/emsign_indicators.py`** — loads [`indicators.csv`](indicators.csv); shared by
-  the scanner, distrust tool, and SIEM export.
-- **`tools/export_siem_indicators.py`** — JSON/NDJSON bundle for SIEM correlation (SIDs,
-  fingerprints, issuer match strings).
+- **`src/emsign_g3/`** — installable package; loads [`indicators.csv`](indicators.csv) via
+  `emsign_g3.indicators`.
+- **`tools/export_siem_indicators.py`** — shim for `emsign-g3 export-indicators`.
 
 ## Operator playbook
 
@@ -75,20 +86,20 @@ PEMs in [`certs/`](certs/).
 1. Inventory (read-only):
 
    ```bash
-   python3 tools/emsign_trust_scanner.py
-   python3 tools/emsign_trust_scanner.py --json   # MDM / fleet collection
+   emsign-g3 scan
+   emsign-g3 scan --json   # MDM / fleet collection
    ```
 
 2. Plan explicit distrust of the **eight intermediates** (dry-run first):
 
    ```bash
-   python3 tools/emsign_distrust.py
-   sudo python3 tools/emsign_distrust.py --apply
+   emsign-g3 distrust
+   sudo emsign-g3 distrust --apply
    ```
 
    PEMs load from `certs/` by default; fingerprints are checked against `indicators.csv`.
 
-3. Roll back with `python3 tools/emsign_distrust.py --undo` (add `--apply` to execute).
+3. Roll back with `emsign-g3 distrust --undo` (add `--apply` to execute).
 
 ### SIEM / SOAR indicators
 
@@ -98,13 +109,26 @@ PEMs in [`certs/`](certs/).
 - **Bulk export:**
 
   ```bash
-  python3 tools/export_siem_indicators.py
-  python3 tools/export_siem_indicators.py --ndjson
-  python3 tools/export_siem_indicators.py --verify   # PEMs vs CSV
+  emsign-g3 export-indicators
+  emsign-g3 export-indicators --ndjson
+  emsign-g3 export-indicators --verify   # PEMs vs CSV
   ```
 
   Use host fields (`sha256_fingerprint`) against scanner/MDM output; use network fields
   (`suricata.sid`, `tls_cert_issuer_match`) against Suricata `eve.json`.
+
+## Development
+
+```bash
+pip install -e ".[dev]"
+pytest
+ruff check src tests
+emsign-g3 export-indicators --verify
+tools/suricata_livefire_test.sh   # optional; requires Suricata
+```
+
+Keep [`indicators.csv`](indicators.csv) in sync with
+[`src/emsign_g3/data/indicators.csv`](src/emsign_g3/data/indicators.csv) (enforced by tests).
 
 ## The durable fix
 
