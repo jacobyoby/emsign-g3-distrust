@@ -1,0 +1,23 @@
+title: "eMudhra emSign G3 compromised issuer EM DV TLS CA - G3B"
+id: "emsign-g3-emdvtlscag3b-2083449"
+status: experimental
+description: "TLS leaf issued under a compromised eMudhra/emSign G3 intermediate (serial A4AEE678F23362B4C0E460B772F214). Private keys were recoverable; see Mozilla Bug 2083449. Tune field names to your Suricata EVE / SIEM mapping."
+references:
+  - https://bugzilla.mozilla.org/show_bug.cgi?id=2083449
+author: emsign-g3-distrust
+tags:
+  - attack.initial_access
+  - attack.t1553.004
+logsource:
+  category: network
+  product: suricata
+  service: eve
+detection:
+  selection_issuer:
+    tls.issuerdn|contains: "EM DV TLS CA - G3B"
+  selection_sid:
+    alert.signature_id: 92083401
+  condition: selection_issuer or selection_sid
+falsepositives:
+  - Historical captures before distrust rollout
+level: high

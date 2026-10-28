@@ -1,0 +1,18 @@
+title: "eMudhra emSign G3 compromised-family issuer (generic review)"
+id: "emsign-g3-generic-backstop-2083449"
+status: experimental
+description: "Backstop for emSign G3 EM * CA - G3B/G3C issuer family (Suricata sid 92083409). Review before blocking; prefer per-CA rules."
+references:
+  - https://bugzilla.mozilla.org/show_bug.cgi?id=2083449
+author: emsign-g3-distrust
+logsource:
+  category: network
+  product: suricata
+  service: eve
+detection:
+  selection:
+    alert.signature_id: 92083409
+  condition: selection
+falsepositives:
+  - Requires analyst review
+level: medium

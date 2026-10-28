@@ -115,14 +115,23 @@ Legacy entry points (`python3 tools/…`) remain as thin shims and work without 
   emsign-g3 export-indicators --ndjson
   emsign-g3 export-indicators --verify   # PEMs vs CSV
   emsign-g3 export-indicators --format sigma --output-dir rules/sigma/
+  emsign-g3 export-indicators --format elastic-kql --output-dir rules/elastic/
+  emsign-g3 export-indicators --check-committed-rules
   ```
+
+  Committed copies live under [`rules/sigma/`](rules/sigma/) and [`rules/elastic/`](rules/elastic/)
+  (regenerate with [`tools/regenerate_detection_rules.sh`](tools/regenerate_detection_rules.sh)).
 
   Use host fields (`sha256_fingerprint`) against scanner/MDM output; use network fields
   (`suricata.sid`, `tls_cert_issuer_match`) against Suricata `eve.json`.
 
-  **Sigma stubs** (`--format sigma`) are starter rules mapped to Suricata EVE
-  (`tls.issuerdn`, `alert.signature_id`). Import into your SIEM and tune field names
-  before production alerting.
+  **Sigma** and **Elastic KQL** exports are starter detections mapped to Suricata EVE
+  (`tls.issuerdn`, `alert.signature_id`). Tune field names before production alerting.
+
+## Releases
+
+Tagged releases (`v*`) build wheels, attach indicator bundles and rule tarballs, and
+publish to PyPI when trusted publishing is configured. See [`RELEASE.md`](RELEASE.md).
 
 ## Development
 
@@ -131,6 +140,7 @@ pip install -e ".[dev]"
 pytest
 ruff check src tests
 emsign-g3 export-indicators --verify
+emsign-g3 export-indicators --check-committed-rules
 tools/suricata_livefire_test.sh   # optional; requires Suricata
 ```
 

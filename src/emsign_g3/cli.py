@@ -32,7 +32,7 @@ def main(argv: list[str] | None = None) -> int:
     exp_p.add_argument("--csv", default=None, help="path to indicators.csv")
     exp_p.add_argument(
         "--format",
-        choices=("json", "ndjson", "sigma"),
+        choices=("json", "ndjson", "sigma", "elastic-kql"),
         default="json",
         help="output format (default: json)",
     )
@@ -46,7 +46,12 @@ def main(argv: list[str] | None = None) -> int:
     exp_p.add_argument(
         "--output-dir",
         default=None,
-        help="write --format sigma YAML files to this directory",
+        help="write --format sigma or elastic-kql files to this directory",
+    )
+    exp_p.add_argument(
+        "--check-committed-rules",
+        action="store_true",
+        help="verify rules/sigma and rules/elastic match generators",
     )
 
     args = parser.parse_args(argv)
@@ -63,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
             verify=args.verify,
             certs_dir=args.certs_dir,
             output_dir=args.output_dir,
+            check_committed_rules=args.check_committed_rules,
         )
 
     parser.error(f"unknown command: {args.command}")
