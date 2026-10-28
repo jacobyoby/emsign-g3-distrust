@@ -47,10 +47,12 @@ emsign-g3 export-indicators --verify
 
 Override data paths when needed: `EMSIGN_G3_INDICATORS_CSV`, `EMSIGN_G3_CERTS_DIR`.
 
+Legacy entry points (`python3 tools/…`) remain as thin shims and work without install.
+
 ## Tools
 
 - **`emsign-g3`** (CLI) — `scan`, `distrust`, `export-indicators` subcommands (see below).
-- **`tools/emsign_trust_scanner.py`** — shim for `emsign-g3 scan` (works without install).
+- **`tools/emsign_trust_scanner.py`** — shim for `emsign-g3 scan`.
 - **`tools/emsign_distrust.py`** — shim for `emsign-g3 distrust`.
 - **`tools/emsign-g3-distrust.rules`** — Suricata/Snort rules that drop TLS whose leaf
   is issued by any of the eight (matches `tls.cert_issuer`). Deploy inline or behind a
