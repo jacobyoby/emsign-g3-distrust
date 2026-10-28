@@ -9,6 +9,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from emsign_g3.elastic import render_elastic_kql_bundle, write_elastic_kql_rules
 from emsign_g3.indicators import (
     ANCHOR_LABELS,
     ANCHOR_TYPES,
@@ -17,6 +18,7 @@ from emsign_g3.indicators import (
     load_rows,
 )
 from emsign_g3.paths import default_certs_dir, indicators_csv_path
+from emsign_g3.siem_artifacts import verify_committed_rules
 from emsign_g3.sigma import render_sigma_bundle, write_sigma_rules
 
 GENERIC_SURICATA_SID = "92083409"
@@ -127,6 +129,7 @@ def run_export(
     verify: bool = False,
     certs_dir: str | Path | None = None,
     output_dir: str | Path | None = None,
+    check_committed_rules: bool = False,
 ) -> int:
     csv_file = Path(csv_path) if csv_path else indicators_csv_path()
     certs_path = Path(certs_dir) if certs_dir else default_certs_dir()
@@ -140,6 +143,15 @@ def run_export(
         print(f"OK: {len(expected_pem_fingerprints())} PEMs match {csv_file}")
         return 0
 
+    if check_committed_rules:
+        rule_errs = verify_committed_rules()
+        if rule_errs:
+            for err in rule_errs:
+                print(err, file=sys.stderr)
+            return 1
+        print("OK: rules/sigma and rules/elastic match generators")
+        return 0
+
     rows = load_rows(csv_file)
     export_fmt = "ndjson" if ndjson else fmt
 
@@ -151,6 +163,16 @@ def run_export(
                 print(f"  {p.name}")
         else:
             sys.stdout.write(render_sigma_bundle(rows))
+        return 0
+
+    if export_fmt == "elastic-kql":
+        if output_dir:
+            paths = write_elastic_kql_rules(Path(output_dir), rows)
+            print(f"Wrote {len(paths)} Elastic KQL file(s) to {output_dir}")
+            for p in paths:
+                print(f"  {p.name}")
+        else:
+            sys.stdout.write(render_elastic_kql_bundle(rows))
         return 0
 
     bundle = build_bundle(rows)

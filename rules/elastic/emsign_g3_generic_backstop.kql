@@ -1,0 +1,4 @@
+// eMudhra emSign G3 compromised-family issuer (generic review)
+// Mozilla Bug 2083449 | Suricata sid 92083409
+// Review hits manually; prefer per-CA rules in this directory.
+alert.signature_id == 92083409

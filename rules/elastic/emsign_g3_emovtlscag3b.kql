@@ -1,0 +1,5 @@
+// eMudhra emSign G3 compromised issuer: EM OV TLS CA - G3B
+// Mozilla Bug 2083449 | serial 6CADA367FB1C100088120EA202D568 | Suricata sid 92083405
+// Starter KQL for Suricata EVE / ECS-normalized TLS events.
+// Adjust field names (e.g. suricata.eve.alert.signature_id) for your stack.
+alert.signature_id == 92083405 or tls.issuerdn : *"EM OV TLS CA - G3B"*

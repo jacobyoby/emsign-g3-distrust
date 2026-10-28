@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "emsign-g3-distrust"
-version = "0.1.0"
+version = "0.2.0"
 description = "Detect and deny compromised eMudhra/emSign G3 intermediate CAs (Mozilla Bug 2083449)"
 readme = "README.md"
 requires-python = ">=3.10"
