@@ -17,6 +17,7 @@ from emsign_g3.indicators import (
     load_rows,
 )
 from emsign_g3.paths import default_certs_dir, indicators_csv_path
+from emsign_g3.sigma import render_sigma_bundle, write_sigma_rules
 
 GENERIC_SURICATA_SID = "92083409"
 
@@ -121,9 +122,11 @@ def to_ndjson(bundle: dict) -> str:
 def run_export(
     *,
     csv_path: str | Path | None = None,
+    fmt: str = "json",
     ndjson: bool = False,
     verify: bool = False,
     certs_dir: str | Path | None = None,
+    output_dir: str | Path | None = None,
 ) -> int:
     csv_file = Path(csv_path) if csv_path else indicators_csv_path()
     certs_path = Path(certs_dir) if certs_dir else default_certs_dir()
@@ -138,10 +141,25 @@ def run_export(
         return 0
 
     rows = load_rows(csv_file)
+    export_fmt = "ndjson" if ndjson else fmt
+
+    if export_fmt == "sigma":
+        if output_dir:
+            paths = write_sigma_rules(Path(output_dir), rows)
+            print(f"Wrote {len(paths)} Sigma rule(s) to {output_dir}")
+            for p in paths:
+                print(f"  {p.name}")
+        else:
+            sys.stdout.write(render_sigma_bundle(rows))
+        return 0
+
     bundle = build_bundle(rows)
-    if ndjson:
+    if export_fmt == "ndjson":
         sys.stdout.write(to_ndjson(bundle))
-    else:
+    elif export_fmt == "json":
         json.dump(bundle, sys.stdout, indent=2)
         sys.stdout.write("\n")
+    else:
+        print(f"unknown export format: {export_fmt}", file=sys.stderr)
+        return 2
     return 0
