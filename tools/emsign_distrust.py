@@ -11,8 +11,8 @@ Safety:
   * --apply executes (most stores need sudo / Administrator).
   * Every action prints its reverse so you can roll back.
 
-It reads the eight fingerprint-verified PEMs from --certs-dir (default: ../anchors next to
-this script). Re-verify them first with emsign_trust_scanner's fingerprint list if unsure.
+It reads the eight fingerprint-verified PEMs from --certs-dir (default: ../certs next to
+this script). Fingerprints are verified against indicators.csv via emsign_indicators.py.
 
 Usage:
   python3 emsign_distrust.py                 # dry run, show the plan
@@ -26,16 +26,7 @@ import platform
 import subprocess
 import sys
 
-EXPECTED = {
-    "EMEVTLSCAG3B": "e7568fe6e12331f4fd7de61da4c7559d0f8eb192a218d4741a3ba75184333838",
-    "EMOVTLSCAG3B": "98b896625c0c230adeec3eb2cf6aad5001ecf9156a68644e82374ce5833bc25b",
-    "EMDVTLSCAG3B": "42c4accd12c4f59597925e1a08a7a90102608543809308d50ec427e118ba1493",
-    "EMEVTLSCAG3C": "432ec25f0d28de9006d97bf752f17bbb2cd41f669933fcb072d9a1148d0261f3",
-    "EMOVTLSCAG3C": "cb6e15165ac802e9b3f993f16c25d41f4e81c21ebde71ae1b012ac00bf9c7c3f",
-    "EMDVTLSCAG3C": "0164d7ceae5bb909c272af151ff44b1177ae9b47d9424b94f1d9558c30934d19",
-    "EMOVCSCAG3B": "9e39de2881273acc225a149c72ba3e0f51424963669ab633ee1dc7df5db067b4",
-    "EMOVCSCAG3C": "4b2460a466f95fd40113bcdcca2ceb29b3b093921de45474da7df48874c630b1",
-}
+from emsign_indicators import default_certs_dir, expected_pem_fingerprints
 
 
 def _sha256_of_pem(path):
@@ -47,10 +38,11 @@ def _sha256_of_pem(path):
 
 def load_certs(certs_dir):
     certs = []
+    expected = expected_pem_fingerprints()
     for path in sorted(glob.glob(os.path.join(certs_dir, "EM*.pem"))):
         name = os.path.splitext(os.path.basename(path))[0]
         fp = _sha256_of_pem(path)
-        want = EXPECTED.get(name)
+        want = expected.get(name)
         if want and fp == want:
             certs.append((name, path, fp))
         else:
@@ -126,7 +118,7 @@ def main():
     ap.add_argument("--apply", action="store_true", help="execute (default: dry run)")
     ap.add_argument("--undo", action="store_true", help="roll back instead of distrust")
     here = os.path.dirname(os.path.abspath(__file__))
-    ap.add_argument("--certs-dir", default=os.path.join(here, "..", "anchors"))
+    ap.add_argument("--certs-dir", default=default_certs_dir())
     args = ap.parse_args()
 
     system = platform.system()

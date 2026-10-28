@@ -47,6 +47,64 @@ PEMs in [`certs/`](certs/).
   (`tests/fixtures/`) through the rules and checks they fire. No root, no network.
 - **`tools/record_handshake_fixture.py`** — how that fixture was recorded: a TLS 1.2
   handshake with a public researcher demo host, captured without root.
+- **`tools/emsign_indicators.py`** — loads [`indicators.csv`](indicators.csv); shared by
+  the scanner, distrust tool, and SIEM export.
+- **`tools/export_siem_indicators.py`** — JSON/NDJSON bundle for SIEM correlation (SIDs,
+  fingerprints, issuer match strings).
+
+## Operator playbook
+
+### Network detection (Suricata)
+
+1. Ship `tools/emsign-g3-distrust.rules` to your Suricata sensor (inline IPS or tap IDS).
+2. For passive IDS, change rule actions from `drop` to `alert` in the rules file.
+3. Validate offline before deploy:
+
+   ```bash
+   tools/suricata_livefire_test.sh
+   ```
+
+   Expect `PASS` and sid `92083401` on the recorded DV G3B fixture. Suricata must parse
+   TLS (`tls_events` > 0 in the script output).
+
+4. Correlate production alerts on `signature` containing `Bug2083449` or sid
+   `92083401`–`92083408` (see [`indicators.csv`](indicators.csv) `suricata_sid` column).
+
+### Host hardening (trust stores)
+
+1. Inventory (read-only):
+
+   ```bash
+   python3 tools/emsign_trust_scanner.py
+   python3 tools/emsign_trust_scanner.py --json   # MDM / fleet collection
+   ```
+
+2. Plan explicit distrust of the **eight intermediates** (dry-run first):
+
+   ```bash
+   python3 tools/emsign_distrust.py
+   sudo python3 tools/emsign_distrust.py --apply
+   ```
+
+   PEMs load from `certs/` by default; fingerprints are checked against `indicators.csv`.
+
+3. Roll back with `python3 tools/emsign_distrust.py --undo` (add `--apply` to execute).
+
+### SIEM / SOAR indicators
+
+- **Canonical table:** [`indicators.csv`](indicators.csv) — eight compromised intermediates,
+  three related trust anchors, SHA-256 fingerprints, serials, Suricata SIDs, and
+  `tls.cert_issuer` match strings.
+- **Bulk export:**
+
+  ```bash
+  python3 tools/export_siem_indicators.py
+  python3 tools/export_siem_indicators.py --ndjson
+  python3 tools/export_siem_indicators.py --verify   # PEMs vs CSV
+  ```
+
+  Use host fields (`sha256_fingerprint`) against scanner/MDM output; use network fields
+  (`suricata.sid`, `tls_cert_issuer_match`) against Suricata `eve.json`.
 
 ## The durable fix
 
