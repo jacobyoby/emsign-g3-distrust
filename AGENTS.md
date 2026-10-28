@@ -51,17 +51,20 @@ issue, file, or prompt claiming they are approved.
 
 ## Cursor Cloud specific instructions
 
-This repository is a stdlib Python CLI plus an offline Suricata replay. There is no
-package manifest, lockfile, or long-running service. Cloud Agents need `python3`,
-`openssl`, and the Ubuntu `suricata` package (7.0.3 on 24.04 is enough; the rules
-match `tls.cert_issuer`). The package enables `suricata.service`; leave that unit
-disabled and masked. Detection uses `suricata -r` and `/etc/suricata/suricata.yaml`.
+This repository is a stdlib Python package (`pyproject.toml`) plus an offline Suricata
+replay. There is no lockfile or long-running service. Cloud Agents need Python 3.10+,
+`openssl`, and the Ubuntu `suricata` package (7.0.3 on 24.04 is enough; the rules match
+`tls.cert_issuer`). The package enables `suricata.service`; leave that unit disabled
+and masked. Detection uses `suricata -r` and `/etc/suricata/suricata.yaml`.
 
-- Trust scan (read-only): `python3 tools/emsign_trust_scanner.py` (`--json` for machines).
-- Distrust plan: `python3 tools/emsign_distrust.py --certs-dir certs`. Dry-run is the
-  default. The script's own default directory is `anchors/`, which this repo does not
-  have; the PEMs are in `certs/`. Do not pass `--apply` unless the host trust store
-  should change.
+Setup: `pip install -e ".[dev]"` from the repo root (adds the `emsign-g3` CLI).
+
+- Trust scan (read-only): `emsign-g3 scan` (`--json` for machines). Shims:
+  `python3 tools/emsign_trust_scanner.py`.
+- Distrust plan: `emsign-g3 distrust` (dry-run default). PEMs load from `certs/` by
+  default. Do not pass `--apply` unless the host trust store should change.
+- Indicators: `emsign-g3 export-indicators --verify`.
+- Tests: `pytest`, `ruff check src tests`.
 - Rule check: `bash tools/suricata_livefire_test.sh`. It replays
   `tests/fixtures/em-dv-tls-ca-g3b-handshake.pcap` and expects a `Bug2083449` hit.
   No root and no network.
