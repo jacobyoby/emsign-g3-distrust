@@ -20,31 +20,16 @@ import re
 import subprocess
 import sys
 
-# SHA-256 fingerprints (lowercase hex, no colons).
-# Roots: a client trusting any of these can build a path to a forged leaf.
-ANCHOR_ROOTS = {
-    "7dd78d5f4f13459a83dff9abbba62edbaf6f2d102bf257fd712f4d9f2746ed8d":
-        "emSign Root TLS CA - G3 (TLS trust anchor)",
-    "f2edaaff3d9b701fb4d14c9f285f8c0bad90fc3bcc1fa07d47f4718edaba34a5":
-        "emSign Root CS CA - G3 (code-signing trust anchor)",
-    "d7a7a0fb5d7e2731d771e9484ebcdef71d5f0c3e0a2948782bc83ee0ea699ef4":
-        "AAA Certificate Services (Sectigo cross-sign path)",
-}
+from emsign_indicators import (
+    AAA_FINGERPRINT,
+    anchor_roots,
+    compromised_intermediates,
+    scan_targets,
+)
 
-# The eight compromised intermediates themselves (Bug 2083449 comment 10). Finding one
-# pinned in a store is a stronger signal than the root; it should be blocklisted.
-COMPROMISED_INTERMEDIATES = {
-    "e7568fe6e12331f4fd7de61da4c7559d0f8eb192a218d4741a3ba75184333838": "EM EV TLS CA - G3B",
-    "98b896625c0c230adeec3eb2cf6aad5001ecf9156a68644e82374ce5833bc25b": "EM OV TLS CA - G3B",
-    "42c4accd12c4f59597925e1a08a7a90102608543809308d50ec427e118ba1493": "EM DV TLS CA - G3B",
-    "432ec25f0d28de9006d97bf752f17bbb2cd41f669933fcb072d9a1148d0261f3": "EM EV TLS CA - G3C",
-    "cb6e15165ac802e9b3f993f16c25d41f4e81c21ebde71ae1b012ac00bf9c7c3f": "EM OV TLS CA - G3C",
-    "0164d7ceae5bb909c272af151ff44b1177ae9b47d9424b94f1d9558c30934d19": "EM DV TLS CA - G3C",
-    "9e39de2881273acc225a149c72ba3e0f51424963669ab633ee1dc7df5db067b4": "EM OV CS CA - G3B",
-    "4b2460a466f95fd40113bcdcca2ceb29b3b093921de45474da7df48874c630b1": "EM OV CS CA - G3C",
-}
-
-TARGETS = {**ANCHOR_ROOTS, **COMPROMISED_INTERMEDIATES}
+ANCHOR_ROOTS = anchor_roots()
+COMPROMISED_INTERMEDIATES = compromised_intermediates()
+TARGETS = scan_targets()
 
 PEM_RE = re.compile(rb"-----BEGIN CERTIFICATE-----(.+?)-----END CERTIFICATE-----", re.S)
 
@@ -190,9 +175,8 @@ def main():
     # live path. AAA Certificate Services is near-universal and only reaches eMudhra via the
     # Sectigo cross-signs, which Sectigo revoked 2026-10-19 — so AAA-only is conditional on
     # the client NOT checking Sectigo's revocation, not exposure on its own.
-    AAA_FP = "d7a7a0fb5d7e2731d771e9484ebcdef71d5f0c3e0a2948782bc83ee0ea699ef4"
-    direct = [h for h in anchor_hits if h["fingerprint"] != AAA_FP] + inter_hits
-    aaa_only = [h for h in anchor_hits if h["fingerprint"] == AAA_FP]
+    direct = [h for h in anchor_hits if h["fingerprint"] != AAA_FINGERPRINT] + inter_hits
+    aaa_only = [h for h in anchor_hits if h["fingerprint"] == AAA_FINGERPRINT]
     if direct:
         verdict = "EXPOSED: direct emSign-G3 trust path present — confirm OneCRL/CRLSet/OS-distrust is applied"
     elif aaa_only:
@@ -223,8 +207,7 @@ def main():
     for s in result["stores_scanned"]:
         print(f"  scanned: {s['store']:16} {s['path']}  ({s['hits']} hit(s))")
     print()
-    direct_names = {h["name"] for h in anchor_hits
-                    if h["fingerprint"] != "d7a7a0fb5d7e2731d771e9484ebcdef71d5f0c3e0a2948782bc83ee0ea699ef4"}
+    direct_names = {h["name"] for h in anchor_hits if h["fingerprint"] != AAA_FINGERPRINT}
     if direct_names or inter_hits:
         print("!! Direct emSign-G3 trust path present:")
         for h in anchor_hits:
