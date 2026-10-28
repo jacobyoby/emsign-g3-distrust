@@ -30,9 +30,24 @@ def main(argv: list[str] | None = None) -> int:
 
     exp_p = sub.add_parser("export-indicators", help="SIEM/SOAR indicator bundle")
     exp_p.add_argument("--csv", default=None, help="path to indicators.csv")
-    exp_p.add_argument("--ndjson", action="store_true", help="newline-delimited JSON")
+    exp_p.add_argument(
+        "--format",
+        choices=("json", "ndjson", "sigma"),
+        default="json",
+        help="output format (default: json)",
+    )
+    exp_p.add_argument(
+        "--ndjson",
+        action="store_true",
+        help="shorthand for --format ndjson (deprecated)",
+    )
     exp_p.add_argument("--verify", action="store_true", help="verify PEMs match CSV")
     exp_p.add_argument("--certs-dir", default=None, help="PEM directory for --verify")
+    exp_p.add_argument(
+        "--output-dir",
+        default=None,
+        help="write --format sigma YAML files to this directory",
+    )
 
     args = parser.parse_args(argv)
 
@@ -43,9 +58,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "export-indicators":
         return run_export(
             csv_path=args.csv or indicators_csv_path(),
+            fmt=args.format,
             ndjson=args.ndjson,
             verify=args.verify,
             certs_dir=args.certs_dir,
+            output_dir=args.output_dir,
         )
 
     parser.error(f"unknown command: {args.command}")

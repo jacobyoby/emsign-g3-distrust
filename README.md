@@ -114,10 +114,15 @@ Legacy entry points (`python3 tools/…`) remain as thin shims and work without 
   emsign-g3 export-indicators
   emsign-g3 export-indicators --ndjson
   emsign-g3 export-indicators --verify   # PEMs vs CSV
+  emsign-g3 export-indicators --format sigma --output-dir rules/sigma/
   ```
 
   Use host fields (`sha256_fingerprint`) against scanner/MDM output; use network fields
   (`suricata.sid`, `tls_cert_issuer_match`) against Suricata `eve.json`.
+
+  **Sigma stubs** (`--format sigma`) are starter rules mapped to Suricata EVE
+  (`tls.issuerdn`, `alert.signature_id`). Import into your SIEM and tune field names
+  before production alerting.
 
 ## Development
 
